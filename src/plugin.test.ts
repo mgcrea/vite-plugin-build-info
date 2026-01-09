@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { gitInfo } from "./plugin.js";
+import { buildInfo } from "./plugin.js";
 import type { Plugin } from "vite";
 
-describe("gitInfo plugin", () => {
+describe("buildInfo plugin", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -22,14 +22,14 @@ describe("gitInfo plugin", () => {
   });
 
   it("should return a valid Vite plugin", () => {
-    const plugin = gitInfo();
+    const plugin = buildInfo();
 
-    expect(plugin.name).toBe("vite-plugin-git-info");
+    expect(plugin.name).toBe("vite-plugin-build-info");
     expect(typeof plugin.config).toBe("function");
   });
 
-  it("should inject git info into define config", () => {
-    const plugin = gitInfo();
+  it("should inject build info into define config with __BUILD_INFO__ as default", () => {
+    const plugin = buildInfo();
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
       { command: "build", mode: "production" }
@@ -37,46 +37,46 @@ describe("gitInfo plugin", () => {
 
     expect(config).toBeDefined();
     expect(config?.define).toBeDefined();
-    expect(config?.define?.["__GIT_INFO__"]).toBeDefined();
+    expect(config?.define?.["__BUILD_INFO__"]).toBeDefined();
 
-    const buildInfo = JSON.parse(config!.define!["__GIT_INFO__"] as string);
-    expect(buildInfo.commitHash).toBe("abc123def456789012345678901234567890abcd");
-    expect(buildInfo.commitShort).toBe("abc123d");
-    expect(buildInfo.commitTime).toBe("1234567890");
-    expect(buildInfo.branch).toBe("main");
-    expect(buildInfo.isDirty).toBe(false);
-    expect(buildInfo.lastTag).toBe("v1.0.0");
-    expect(buildInfo.commitsSinceTag).toBe(5);
+    const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
+    expect(info.commitHash).toBe("abc123def456789012345678901234567890abcd");
+    expect(info.commitShort).toBe("abc123d");
+    expect(info.commitTime).toBe("1234567890");
+    expect(info.branch).toBe("main");
+    expect(info.isDirty).toBe(false);
+    expect(info.lastTag).toBe("v1.0.0");
+    expect(info.commitsSinceTag).toBe(5);
   });
 
   it("should include buildTime in output", () => {
-    const plugin = gitInfo();
+    const plugin = buildInfo();
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
       { command: "build", mode: "production" }
     );
 
-    const buildInfo = JSON.parse(config!.define!["__GIT_INFO__"] as string);
+    const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
 
-    expect(buildInfo.buildTime).toBeDefined();
-    expect(typeof buildInfo.buildTime).toBe("string");
+    expect(info.buildTime).toBeDefined();
+    expect(typeof info.buildTime).toBe("string");
     // Should be a valid ISO date string
-    expect(new Date(buildInfo.buildTime).toISOString()).toBe(buildInfo.buildTime);
+    expect(new Date(info.buildTime).toISOString()).toBe(info.buildTime);
   });
 
   it("should use custom globalName", () => {
-    const plugin = gitInfo({ globalName: "__BUILD_INFO__" });
+    const plugin = buildInfo({ globalName: "__APP_INFO__" });
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
       { command: "build", mode: "production" }
     );
 
-    expect(config?.define?.["__BUILD_INFO__"]).toBeDefined();
-    expect(config?.define?.["__GIT_INFO__"]).toBeUndefined();
+    expect(config?.define?.["__APP_INFO__"]).toBeDefined();
+    expect(config?.define?.["__BUILD_INFO__"]).toBeUndefined();
   });
 
   it("should not inject when define is false", () => {
-    const plugin = gitInfo({ define: false });
+    const plugin = buildInfo({ define: false });
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
       { command: "build", mode: "production" }
@@ -86,22 +86,22 @@ describe("gitInfo plugin", () => {
   });
 
   it("should throw error for invalid globalName", () => {
-    expect(() => gitInfo({ globalName: "123invalid" })).toThrow(
+    expect(() => buildInfo({ globalName: "123invalid" })).toThrow(
       'Invalid globalName "123invalid"'
     );
-    expect(() => gitInfo({ globalName: "foo-bar" })).toThrow(
+    expect(() => buildInfo({ globalName: "foo-bar" })).toThrow(
       'Invalid globalName "foo-bar"'
     );
-    expect(() => gitInfo({ globalName: "" })).toThrow(
+    expect(() => buildInfo({ globalName: "" })).toThrow(
       'Invalid globalName ""'
     );
   });
 
   it("should accept valid globalName variations", () => {
-    expect(() => gitInfo({ globalName: "_private" })).not.toThrow();
-    expect(() => gitInfo({ globalName: "$jquery" })).not.toThrow();
-    expect(() => gitInfo({ globalName: "SCREAMING_CASE" })).not.toThrow();
-    expect(() => gitInfo({ globalName: "camelCase" })).not.toThrow();
+    expect(() => buildInfo({ globalName: "_private" })).not.toThrow();
+    expect(() => buildInfo({ globalName: "$jquery" })).not.toThrow();
+    expect(() => buildInfo({ globalName: "SCREAMING_CASE" })).not.toThrow();
+    expect(() => buildInfo({ globalName: "camelCase" })).not.toThrow();
   });
 
   it("should pass through git options", () => {
@@ -113,31 +113,31 @@ describe("gitInfo plugin", () => {
     process.env.BUILD_LAST_TAG = "v2.0.0";
     process.env.BUILD_COMMITS_SINCE_TAG = "10";
 
-    const plugin = gitInfo({ envPrefix: "BUILD_" });
+    const plugin = buildInfo({ envPrefix: "BUILD_" });
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
       { command: "build", mode: "production" }
     );
 
-    const buildInfo = JSON.parse(config!.define!["__GIT_INFO__"] as string);
-    expect(buildInfo.commitHash).toBe("custom_commit");
-    expect(buildInfo.isDirty).toBe(true);
-    expect(buildInfo.lastTag).toBe("v2.0.0");
+    const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
+    expect(info.commitHash).toBe("custom_commit");
+    expect(info.isDirty).toBe(true);
+    expect(info.lastTag).toBe("v2.0.0");
   });
 
   it("should enable debug logging when debug is true", () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    gitInfo({ debug: true });
+    buildInfo({ debug: true });
 
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 });
 
-describe("gitInfo default export", () => {
+describe("buildInfo default export", () => {
   it("should work as default export", async () => {
-    const { default: gitInfoDefault } = await import("./plugin.js");
-    expect(gitInfoDefault).toBe(gitInfo);
+    const { default: buildInfoDefault } = await import("./plugin.js");
+    expect(buildInfoDefault).toBe(buildInfo);
   });
 });

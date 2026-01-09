@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as exports from "./index.js";
 import {
-  gitInfo,
+  buildInfo,
   getGitInfo,
   isValidIdentifier,
   UNKNOWN_GIT_INFO,
@@ -12,13 +12,13 @@ import type {
   BuildInfo,
   GitEnvVarNames,
   GetGitInfoOptions,
-  GitInfoPluginOptions,
+  BuildInfoPluginOptions,
 } from "./index.js";
 
 describe("public exports", () => {
-  it("should export gitInfo function", () => {
-    expect(gitInfo).toBeDefined();
-    expect(typeof gitInfo).toBe("function");
+  it("should export buildInfo function", () => {
+    expect(buildInfo).toBeDefined();
+    expect(typeof buildInfo).toBe("function");
   });
 
   it("should export getGitInfo function", () => {
@@ -57,8 +57,8 @@ describe("public exports", () => {
     });
   });
 
-  it("should have default export as gitInfo", () => {
-    expect(exports.default).toBe(gitInfo);
+  it("should have default export as buildInfo", () => {
+    expect(exports.default).toBe(buildInfo);
   });
 });
 
@@ -107,8 +107,8 @@ describe("type exports", () => {
     expect(options).toBeDefined();
   });
 
-  it("should allow using GitInfoPluginOptions type", () => {
-    const options: GitInfoPluginOptions = {
+  it("should allow using BuildInfoPluginOptions type", () => {
+    const options: BuildInfoPluginOptions = {
       globalName: "__BUILD__",
       define: true,
       debug: false,
