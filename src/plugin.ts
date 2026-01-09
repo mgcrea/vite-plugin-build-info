@@ -12,6 +12,8 @@ function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
   const gitInfo = getGitInfo(options);
 
   return {
+    name: process.env.npm_package_name ?? "",
+    version: process.env.npm_package_version ?? "",
     ...gitInfo,
     buildTime: new Date().toISOString(),
   };
@@ -52,6 +54,8 @@ function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
  * ```ts
  * // In your app
  * declare const __BUILD_INFO__: {
+ *   name: string;
+ *   version: string;
  *   commitHash: string;
  *   commitShort: string;
  *   commitTime: string;
@@ -62,9 +66,9 @@ function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
  *   buildTime: string;
  * };
  *
+ * console.log(__BUILD_INFO__.name);         // "my-app"
+ * console.log(__BUILD_INFO__.version);      // "1.2.3"
  * console.log(__BUILD_INFO__.commitShort);  // "abc1234"
- * console.log(__BUILD_INFO__.isDirty);      // false
- * console.log(__BUILD_INFO__.buildTime);    // "2024-01-15T10:30:00.000Z"
  * ```
  */
 export function buildInfo(options: BuildInfoPluginOptions = {}): Plugin {

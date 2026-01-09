@@ -22,6 +22,10 @@ export interface GitInfo {
  * Build information structure (includes git info + build metadata).
  */
 export interface BuildInfo extends GitInfo {
+  /** Package name from package.json */
+  name: string;
+  /** Package version from package.json */
+  version: string;
   /** ISO 8601 timestamp when the build was created */
   buildTime: string;
 }

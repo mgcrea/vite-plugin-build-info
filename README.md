@@ -5,6 +5,7 @@ A Vite plugin that exposes git and build information as a global variable in you
 ## Features
 
 - **Git Information**: Commit hash, branch, timestamp
+- **Package Info**: Automatic name and version from package.json
 - **Build Metadata**: Build timestamp, dirty status
 - **Version Tracking**: Latest tag and commits since tag
 - **Docker/CI Support**: Environment variable fallback when `.git` isn't available
@@ -40,6 +41,8 @@ Then in your application:
 ```ts
 // Add type declaration (or add to a .d.ts file)
 declare const __BUILD_INFO__: {
+  name: string;
+  version: string;
   commitHash: string;
   commitShort: string;
   commitTime: string;
@@ -51,8 +54,8 @@ declare const __BUILD_INFO__: {
 };
 
 // Display version info
-console.log(`Build: ${__BUILD_INFO__.commitShort}`);
-console.log(`Branch: ${__BUILD_INFO__.branch}`);
+console.log(`${__BUILD_INFO__.name} v${__BUILD_INFO__.version}`);
+console.log(`Build: ${__BUILD_INFO__.commitShort} on ${__BUILD_INFO__.branch}`);
 console.log(`Built: ${new Date(__BUILD_INFO__.buildTime).toLocaleString()}`);
 
 // Show if there were uncommitted changes
@@ -215,6 +218,8 @@ The complete build information injected by the plugin:
 
 ```ts
 interface BuildInfo {
+  name: string; // Package name from package.json
+  version: string; // Package version from package.json
   commitHash: string; // Full commit SHA
   commitShort: string; // Short commit SHA (7 chars)
   commitTime: string; // Unix timestamp of commit
@@ -225,6 +230,8 @@ interface BuildInfo {
   buildTime: string; // ISO 8601 timestamp when build was created
 }
 ```
+
+> **Note:** `name` and `version` are automatically read from `npm_package_name` and `npm_package_version` environment variables, which npm/pnpm/yarn set when running scripts.
 
 ### GitInfo
 
@@ -249,16 +256,15 @@ interface GitInfo {
 ```tsx
 // Footer.tsx
 export function Footer() {
-  const version = __BUILD_INFO__.lastTag || __BUILD_INFO__.commitShort;
-  const isDev = __BUILD_INFO__.isDirty;
+  const { name, version, commitShort, isDirty, buildTime } = __BUILD_INFO__;
 
   return (
     <footer>
       <p>
-        Version: {version}
-        {isDev && <span className="badge">DEV</span>}
+        {name} v{version} ({commitShort})
+        {isDirty && <span className="badge">DEV</span>}
       </p>
-      <p>Built: {new Date(__BUILD_INFO__.buildTime).toLocaleString()}</p>
+      <p>Built: {new Date(buildTime).toLocaleString()}</p>
     </footer>
   );
 }

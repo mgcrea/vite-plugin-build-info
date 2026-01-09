@@ -8,6 +8,8 @@ describe("buildInfo plugin", () => {
   beforeEach(() => {
     process.env = { ...originalEnv };
     // Set up known env vars for predictable tests
+    process.env.npm_package_name = "test-app";
+    process.env.npm_package_version = "1.2.3";
     process.env.GIT_COMMIT = "abc123def456789012345678901234567890abcd";
     process.env.GIT_COMMIT_SHORT = "abc123d";
     process.env.GIT_COMMIT_TIME = "1234567890";
@@ -62,6 +64,35 @@ describe("buildInfo plugin", () => {
     expect(typeof info.buildTime).toBe("string");
     // Should be a valid ISO date string
     expect(new Date(info.buildTime).toISOString()).toBe(info.buildTime);
+  });
+
+  it("should include package name and version from npm env vars", () => {
+    const plugin = buildInfo();
+    const config = (plugin.config as NonNullable<Plugin["config"]>)(
+      {},
+      { command: "build", mode: "production" },
+    );
+
+    const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
+
+    expect(info.name).toBe("test-app");
+    expect(info.version).toBe("1.2.3");
+  });
+
+  it("should default to empty strings when npm env vars are not set", () => {
+    delete process.env.npm_package_name;
+    delete process.env.npm_package_version;
+
+    const plugin = buildInfo();
+    const config = (plugin.config as NonNullable<Plugin["config"]>)(
+      {},
+      { command: "build", mode: "production" },
+    );
+
+    const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
+
+    expect(info.name).toBe("");
+    expect(info.version).toBe("");
   });
 
   it("should use custom globalName", () => {

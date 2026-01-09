@@ -78,6 +78,8 @@ describe("type exports", () => {
 
   it("should allow using BuildInfo type", () => {
     const info: BuildInfo = {
+      name: "my-app",
+      version: "1.0.0",
       commitHash: "abc",
       commitShort: "abc",
       commitTime: "123",
