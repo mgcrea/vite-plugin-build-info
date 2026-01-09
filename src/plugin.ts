@@ -68,18 +68,14 @@ function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
  * ```
  */
 export function buildInfo(options: BuildInfoPluginOptions = {}): Plugin {
-  const {
-    globalName = "__BUILD_INFO__",
-    define = true,
-    debug: debugEnabled = false,
-  } = options;
+  const { globalName = "__BUILD_INFO__", define = true, debug: debugEnabled = false } = options;
 
   const debug = createDebugLogger(debugEnabled);
 
   // Validate globalName
   if (!isValidIdentifier(globalName)) {
     throw new Error(
-      `[vite-plugin-build-info] Invalid globalName "${globalName}". Must be a valid JavaScript identifier.`
+      `[vite-plugin-build-info] Invalid globalName "${globalName}". Must be a valid JavaScript identifier.`,
     );
   }
 

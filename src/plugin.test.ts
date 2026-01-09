@@ -32,7 +32,7 @@ describe("buildInfo plugin", () => {
     const plugin = buildInfo();
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
-      { command: "build", mode: "production" }
+      { command: "build", mode: "production" },
     );
 
     expect(config).toBeDefined();
@@ -53,7 +53,7 @@ describe("buildInfo plugin", () => {
     const plugin = buildInfo();
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
-      { command: "build", mode: "production" }
+      { command: "build", mode: "production" },
     );
 
     const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
@@ -68,7 +68,7 @@ describe("buildInfo plugin", () => {
     const plugin = buildInfo({ globalName: "__APP_INFO__" });
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
-      { command: "build", mode: "production" }
+      { command: "build", mode: "production" },
     );
 
     expect(config?.define?.["__APP_INFO__"]).toBeDefined();
@@ -79,7 +79,7 @@ describe("buildInfo plugin", () => {
     const plugin = buildInfo({ define: false });
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
-      { command: "build", mode: "production" }
+      { command: "build", mode: "production" },
     );
 
     expect(config).toBeUndefined();
@@ -87,14 +87,10 @@ describe("buildInfo plugin", () => {
 
   it("should throw error for invalid globalName", () => {
     expect(() => buildInfo({ globalName: "123invalid" })).toThrow(
-      'Invalid globalName "123invalid"'
+      'Invalid globalName "123invalid"',
     );
-    expect(() => buildInfo({ globalName: "foo-bar" })).toThrow(
-      'Invalid globalName "foo-bar"'
-    );
-    expect(() => buildInfo({ globalName: "" })).toThrow(
-      'Invalid globalName ""'
-    );
+    expect(() => buildInfo({ globalName: "foo-bar" })).toThrow('Invalid globalName "foo-bar"');
+    expect(() => buildInfo({ globalName: "" })).toThrow('Invalid globalName ""');
   });
 
   it("should accept valid globalName variations", () => {
@@ -116,7 +112,7 @@ describe("buildInfo plugin", () => {
     const plugin = buildInfo({ envPrefix: "BUILD_" });
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
       {},
-      { command: "build", mode: "production" }
+      { command: "build", mode: "production" },
     );
 
     const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);

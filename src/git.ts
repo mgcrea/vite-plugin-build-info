@@ -1,9 +1,6 @@
 import { execSync } from "node:child_process";
 import type { GetGitInfoOptions, GitInfo } from "./types.js";
-import {
-  DEFAULT_ENV_VAR_NAMES,
-  UNKNOWN_GIT_INFO,
-} from "./types.js";
+import { DEFAULT_ENV_VAR_NAMES, UNKNOWN_GIT_INFO } from "./types.js";
 import { createDebugLogger, getEnvVar } from "./utils.js";
 
 /** Default timeout for git commands in milliseconds */
@@ -88,7 +85,7 @@ function getTagInfo(timeout: number): { lastTag: string; commitsSinceTag: number
 function getGitInfoFromEnv(
   envPrefix: string,
   envVars: Required<typeof DEFAULT_ENV_VAR_NAMES>,
-  debug: (msg: string) => void
+  debug: (msg: string) => void,
 ): GitInfo | null {
   const commitHashKey = `${envPrefix}${envVars.commitHash}`;
   const commitHash = getEnvVar(commitHashKey);
@@ -120,10 +117,7 @@ function getGitInfoFromEnv(
  * @param debug - Debug logger function
  * @returns GitInfo from git commands, or unknown values if commands fail
  */
-function getGitInfoFromCommands(
-  timeout: number,
-  debug: (msg: string) => void
-): GitInfo {
+function getGitInfoFromCommands(timeout: number, debug: (msg: string) => void): GitInfo {
   const commitHash = execGitCommand(GIT_COMMANDS.commitHash, timeout);
 
   if (!commitHash) {

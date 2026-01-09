@@ -62,9 +62,10 @@ if (__BUILD_INFO__.isDirty) {
 
 // Display version from tags
 if (__BUILD_INFO__.lastTag) {
-  const version = __BUILD_INFO__.commitsSinceTag === 0
-    ? __BUILD_INFO__.lastTag
-    : `${__BUILD_INFO__.lastTag}+${__BUILD_INFO__.commitsSinceTag}`;
+  const version =
+    __BUILD_INFO__.commitsSinceTag === 0
+      ? __BUILD_INFO__.lastTag
+      : `${__BUILD_INFO__.lastTag}+${__BUILD_INFO__.commitsSinceTag}`;
   console.log(`Version: ${version}`);
 }
 ```
@@ -185,26 +186,26 @@ export default defineConfig({
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `globalName` | `string` | `"__BUILD_INFO__"` | The global variable name (must be valid JS identifier) |
-| `envPrefix` | `string \| false` | `"GIT_"` | Environment variable prefix, or `false` to disable |
-| `envVars` | `object` | See below | Custom environment variable names |
-| `define` | `boolean` | `true` | Whether to add to Vite's define config |
-| `timeout` | `number` | `5000` | Timeout for git commands in milliseconds |
-| `debug` | `boolean` | `false` | Enable debug logging |
+| Option       | Type              | Default            | Description                                            |
+| ------------ | ----------------- | ------------------ | ------------------------------------------------------ |
+| `globalName` | `string`          | `"__BUILD_INFO__"` | The global variable name (must be valid JS identifier) |
+| `envPrefix`  | `string \| false` | `"GIT_"`           | Environment variable prefix, or `false` to disable     |
+| `envVars`    | `object`          | See below          | Custom environment variable names                      |
+| `define`     | `boolean`         | `true`             | Whether to add to Vite's define config                 |
+| `timeout`    | `number`          | `5000`             | Timeout for git commands in milliseconds               |
+| `debug`      | `boolean`         | `false`            | Enable debug logging                                   |
 
 ### Default Environment Variables
 
-| Property | Default Env Var | Description |
-| -------- | --------------- | ----------- |
-| `commitHash` | `GIT_COMMIT` | Full commit SHA hash |
-| `commitShort` | `GIT_COMMIT_SHORT` | Short commit SHA (7 chars) |
-| `commitTime` | `GIT_COMMIT_TIME` | Unix timestamp of commit |
-| `branch` | `GIT_BRANCH` | Current branch name |
-| `isDirty` | `GIT_IS_DIRTY` | "true" or "1" if working tree is dirty |
-| `lastTag` | `GIT_LAST_TAG` | Most recent tag name |
-| `commitsSinceTag` | `GIT_COMMITS_SINCE_TAG` | Number of commits since last tag |
+| Property          | Default Env Var         | Description                            |
+| ----------------- | ----------------------- | -------------------------------------- |
+| `commitHash`      | `GIT_COMMIT`            | Full commit SHA hash                   |
+| `commitShort`     | `GIT_COMMIT_SHORT`      | Short commit SHA (7 chars)             |
+| `commitTime`      | `GIT_COMMIT_TIME`       | Unix timestamp of commit               |
+| `branch`          | `GIT_BRANCH`            | Current branch name                    |
+| `isDirty`         | `GIT_IS_DIRTY`          | "true" or "1" if working tree is dirty |
+| `lastTag`         | `GIT_LAST_TAG`          | Most recent tag name                   |
+| `commitsSinceTag` | `GIT_COMMITS_SINCE_TAG` | Number of commits since last tag       |
 
 ## Types
 
@@ -214,14 +215,14 @@ The complete build information injected by the plugin:
 
 ```ts
 interface BuildInfo {
-  commitHash: string;      // Full commit SHA
-  commitShort: string;     // Short commit SHA (7 chars)
-  commitTime: string;      // Unix timestamp of commit
-  branch: string;          // Current branch name
-  isDirty: boolean;        // Whether working tree has uncommitted changes
-  lastTag: string;         // Most recent tag (empty if none)
+  commitHash: string; // Full commit SHA
+  commitShort: string; // Short commit SHA (7 chars)
+  commitTime: string; // Unix timestamp of commit
+  branch: string; // Current branch name
+  isDirty: boolean; // Whether working tree has uncommitted changes
+  lastTag: string; // Most recent tag (empty if none)
   commitsSinceTag: number; // Commits since last tag (or total if no tag)
-  buildTime: string;       // ISO 8601 timestamp when build was created
+  buildTime: string; // ISO 8601 timestamp when build was created
 }
 ```
 
