@@ -12,6 +12,9 @@ describe("gitInfo plugin", () => {
     process.env.GIT_COMMIT_SHORT = "abc123d";
     process.env.GIT_COMMIT_TIME = "1234567890";
     process.env.GIT_BRANCH = "main";
+    process.env.GIT_IS_DIRTY = "false";
+    process.env.GIT_LAST_TAG = "v1.0.0";
+    process.env.GIT_COMMITS_SINCE_TAG = "5";
   });
 
   afterEach(() => {
@@ -36,11 +39,29 @@ describe("gitInfo plugin", () => {
     expect(config?.define).toBeDefined();
     expect(config?.define?.["__GIT_INFO__"]).toBeDefined();
 
-    const gitInfoValue = JSON.parse(config!.define!["__GIT_INFO__"] as string);
-    expect(gitInfoValue.commitHash).toBe("abc123def456789012345678901234567890abcd");
-    expect(gitInfoValue.commitShort).toBe("abc123d");
-    expect(gitInfoValue.commitTime).toBe("1234567890");
-    expect(gitInfoValue.branch).toBe("main");
+    const buildInfo = JSON.parse(config!.define!["__GIT_INFO__"] as string);
+    expect(buildInfo.commitHash).toBe("abc123def456789012345678901234567890abcd");
+    expect(buildInfo.commitShort).toBe("abc123d");
+    expect(buildInfo.commitTime).toBe("1234567890");
+    expect(buildInfo.branch).toBe("main");
+    expect(buildInfo.isDirty).toBe(false);
+    expect(buildInfo.lastTag).toBe("v1.0.0");
+    expect(buildInfo.commitsSinceTag).toBe(5);
+  });
+
+  it("should include buildTime in output", () => {
+    const plugin = gitInfo();
+    const config = (plugin.config as NonNullable<Plugin["config"]>)(
+      {},
+      { command: "build", mode: "production" }
+    );
+
+    const buildInfo = JSON.parse(config!.define!["__GIT_INFO__"] as string);
+
+    expect(buildInfo.buildTime).toBeDefined();
+    expect(typeof buildInfo.buildTime).toBe("string");
+    // Should be a valid ISO date string
+    expect(new Date(buildInfo.buildTime).toISOString()).toBe(buildInfo.buildTime);
   });
 
   it("should use custom globalName", () => {
@@ -88,6 +109,9 @@ describe("gitInfo plugin", () => {
     process.env.BUILD_COMMIT_SHORT = "custom";
     process.env.BUILD_COMMIT_TIME = "9999999999";
     process.env.BUILD_BRANCH = "feature";
+    process.env.BUILD_IS_DIRTY = "true";
+    process.env.BUILD_LAST_TAG = "v2.0.0";
+    process.env.BUILD_COMMITS_SINCE_TAG = "10";
 
     const plugin = gitInfo({ envPrefix: "BUILD_" });
     const config = (plugin.config as NonNullable<Plugin["config"]>)(
@@ -95,8 +119,10 @@ describe("gitInfo plugin", () => {
       { command: "build", mode: "production" }
     );
 
-    const gitInfoValue = JSON.parse(config!.define!["__GIT_INFO__"] as string);
-    expect(gitInfoValue.commitHash).toBe("custom_commit");
+    const buildInfo = JSON.parse(config!.define!["__GIT_INFO__"] as string);
+    expect(buildInfo.commitHash).toBe("custom_commit");
+    expect(buildInfo.isDirty).toBe(true);
+    expect(buildInfo.lastTag).toBe("v2.0.0");
   });
 
   it("should enable debug logging when debug is true", () => {

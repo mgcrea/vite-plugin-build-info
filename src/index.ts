@@ -16,6 +16,7 @@
 // Types
 export type {
   GitInfo,
+  BuildInfo,
   GitEnvVarNames,
   GetGitInfoOptions,
   GitInfoPluginOptions,

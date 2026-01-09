@@ -9,6 +9,7 @@ import {
 } from "./index.js";
 import type {
   GitInfo,
+  BuildInfo,
   GitEnvVarNames,
   GetGitInfoOptions,
   GitInfoPluginOptions,
@@ -37,6 +38,9 @@ describe("public exports", () => {
       commitShort: "unknown",
       commitTime: "0",
       branch: "unknown",
+      isDirty: false,
+      lastTag: "",
+      commitsSinceTag: 0,
     });
   });
 
@@ -47,6 +51,9 @@ describe("public exports", () => {
       commitShort: "COMMIT_SHORT",
       commitTime: "COMMIT_TIME",
       branch: "BRANCH",
+      isDirty: "IS_DIRTY",
+      lastTag: "LAST_TAG",
+      commitsSinceTag: "COMMITS_SINCE_TAG",
     });
   });
 
@@ -62,6 +69,23 @@ describe("type exports", () => {
       commitShort: "abc",
       commitTime: "123",
       branch: "main",
+      isDirty: false,
+      lastTag: "v1.0.0",
+      commitsSinceTag: 5,
+    };
+    expect(info).toBeDefined();
+  });
+
+  it("should allow using BuildInfo type", () => {
+    const info: BuildInfo = {
+      commitHash: "abc",
+      commitShort: "abc",
+      commitTime: "123",
+      branch: "main",
+      isDirty: false,
+      lastTag: "v1.0.0",
+      commitsSinceTag: 5,
+      buildTime: new Date().toISOString(),
     };
     expect(info).toBeDefined();
   });
@@ -69,6 +93,8 @@ describe("type exports", () => {
   it("should allow using GitEnvVarNames type", () => {
     const names: GitEnvVarNames = {
       commitHash: "HASH",
+      isDirty: "DIRTY",
+      lastTag: "TAG",
     };
     expect(names).toBeDefined();
   });

@@ -10,6 +10,20 @@ export interface GitInfo {
   commitTime: string;
   /** Current branch name */
   branch: string;
+  /** Whether the working tree has uncommitted changes */
+  isDirty: boolean;
+  /** Most recent tag, or empty string if none */
+  lastTag: string;
+  /** Number of commits since the last tag, or total commits if no tag */
+  commitsSinceTag: number;
+}
+
+/**
+ * Build information structure (includes git info + build metadata).
+ */
+export interface BuildInfo extends GitInfo {
+  /** ISO 8601 timestamp when the build was created */
+  buildTime: string;
 }
 
 /**
@@ -20,6 +34,9 @@ export interface GitEnvVarNames {
   commitShort?: string;
   commitTime?: string;
   branch?: string;
+  isDirty?: string;
+  lastTag?: string;
+  commitsSinceTag?: string;
 }
 
 /**
@@ -79,6 +96,9 @@ export const UNKNOWN_GIT_INFO: GitInfo = {
   commitShort: "unknown",
   commitTime: "0",
   branch: "unknown",
+  isDirty: false,
+  lastTag: "",
+  commitsSinceTag: 0,
 } as const;
 
 /**
@@ -89,4 +109,7 @@ export const DEFAULT_ENV_VAR_NAMES: Required<GitEnvVarNames> = {
   commitShort: "COMMIT_SHORT",
   commitTime: "COMMIT_TIME",
   branch: "BRANCH",
+  isDirty: "IS_DIRTY",
+  lastTag: "LAST_TAG",
+  commitsSinceTag: "COMMITS_SINCE_TAG",
 } as const;

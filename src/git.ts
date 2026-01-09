@@ -17,6 +17,10 @@ const GIT_COMMANDS = {
   commitShort: "git rev-parse --short HEAD",
   commitTime: "git log -1 --format=%ct",
   branch: "git rev-parse --abbrev-ref HEAD",
+  isDirty: "git status --porcelain",
+  lastTag: "git describe --tags --abbrev=0",
+  commitsSinceTag: "git rev-list --count",
+  totalCommits: "git rev-list --count HEAD",
 } as const;
 
 /**
@@ -35,6 +39,43 @@ function execGitCommand(command: string, timeout: number): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Checks if the working tree has uncommitted changes.
+ * @param timeout - Timeout in milliseconds
+ * @returns True if dirty, false if clean
+ */
+function checkIsDirty(timeout: number): boolean {
+  const output = execGitCommand(GIT_COMMANDS.isDirty, timeout);
+  return output !== null && output.length > 0;
+}
+
+/**
+ * Gets the most recent tag and commits since that tag.
+ * @param timeout - Timeout in milliseconds
+ * @returns Object with lastTag and commitsSinceTag
+ */
+function getTagInfo(timeout: number): { lastTag: string; commitsSinceTag: number } {
+  const lastTag = execGitCommand(GIT_COMMANDS.lastTag, timeout);
+
+  if (!lastTag) {
+    // No tags exist, count total commits
+    const totalCommits = execGitCommand(GIT_COMMANDS.totalCommits, timeout);
+    return {
+      lastTag: "",
+      commitsSinceTag: totalCommits ? parseInt(totalCommits, 10) : 0,
+    };
+  }
+
+  // Count commits since the tag
+  const countCommand = `${GIT_COMMANDS.commitsSinceTag} ${lastTag}..HEAD`;
+  const count = execGitCommand(countCommand, timeout);
+
+  return {
+    lastTag,
+    commitsSinceTag: count ? parseInt(count, 10) : 0,
+  };
 }
 
 /**
@@ -59,11 +100,17 @@ function getGitInfoFromEnv(
 
   debug(`Found git info in environment variables (prefix: ${envPrefix})`);
 
+  const isDirtyEnv = getEnvVar(`${envPrefix}${envVars.isDirty}`);
+  const commitsSinceTagEnv = getEnvVar(`${envPrefix}${envVars.commitsSinceTag}`);
+
   return {
     commitHash,
     commitShort: getEnvVar(`${envPrefix}${envVars.commitShort}`) ?? "unknown",
     commitTime: getEnvVar(`${envPrefix}${envVars.commitTime}`) ?? "0",
     branch: getEnvVar(`${envPrefix}${envVars.branch}`) ?? "unknown",
+    isDirty: isDirtyEnv === "true" || isDirtyEnv === "1",
+    lastTag: getEnvVar(`${envPrefix}${envVars.lastTag}`) ?? "",
+    commitsSinceTag: commitsSinceTagEnv ? parseInt(commitsSinceTagEnv, 10) : 0,
   };
 }
 
@@ -86,11 +133,15 @@ function getGitInfoFromCommands(
 
   debug("Retrieved git info from git commands");
 
+  const tagInfo = getTagInfo(timeout);
+
   return {
     commitHash,
     commitShort: execGitCommand(GIT_COMMANDS.commitShort, timeout) ?? "unknown",
     commitTime: execGitCommand(GIT_COMMANDS.commitTime, timeout) ?? "0",
     branch: execGitCommand(GIT_COMMANDS.branch, timeout) ?? "unknown",
+    isDirty: checkIsDirty(timeout),
+    ...tagInfo,
   };
 }
 
@@ -107,6 +158,8 @@ function getGitInfoFromCommands(
  * ```ts
  * const info = getGitInfo();
  * console.log(info.commitShort); // "abc1234"
+ * console.log(info.isDirty);     // false
+ * console.log(info.lastTag);     // "v1.0.0"
  * ```
  *
  * @example

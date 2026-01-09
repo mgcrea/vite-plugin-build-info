@@ -19,6 +19,9 @@ describe("getGitInfo", () => {
       process.env.GIT_COMMIT_SHORT = "abc123d";
       process.env.GIT_COMMIT_TIME = "1234567890";
       process.env.GIT_BRANCH = "main";
+      process.env.GIT_IS_DIRTY = "true";
+      process.env.GIT_LAST_TAG = "v1.0.0";
+      process.env.GIT_COMMITS_SINCE_TAG = "5";
 
       const info = getGitInfo();
 
@@ -27,6 +30,9 @@ describe("getGitInfo", () => {
         commitShort: "abc123d",
         commitTime: "1234567890",
         branch: "main",
+        isDirty: true,
+        lastTag: "v1.0.0",
+        commitsSinceTag: 5,
       });
     });
 
@@ -35,6 +41,9 @@ describe("getGitInfo", () => {
       process.env.BUILD_COMMIT_SHORT = "xyz789";
       process.env.BUILD_COMMIT_TIME = "9876543210";
       process.env.BUILD_BRANCH = "develop";
+      process.env.BUILD_IS_DIRTY = "false";
+      process.env.BUILD_LAST_TAG = "v2.0.0";
+      process.env.BUILD_COMMITS_SINCE_TAG = "10";
 
       const info = getGitInfo({ envPrefix: "BUILD_" });
 
@@ -43,6 +52,9 @@ describe("getGitInfo", () => {
         commitShort: "xyz789",
         commitTime: "9876543210",
         branch: "develop",
+        isDirty: false,
+        lastTag: "v2.0.0",
+        commitsSinceTag: 10,
       });
     });
 
@@ -51,6 +63,9 @@ describe("getGitInfo", () => {
       process.env.GIT_SHA_SHORT = "custom1";
       process.env.GIT_TIMESTAMP = "1111111111";
       process.env.GIT_REF = "feature/test";
+      process.env.GIT_DIRTY = "1";
+      process.env.GIT_TAG = "v3.0.0";
+      process.env.GIT_COUNT = "3";
 
       const info = getGitInfo({
         envVars: {
@@ -58,6 +73,9 @@ describe("getGitInfo", () => {
           commitShort: "SHA_SHORT",
           commitTime: "TIMESTAMP",
           branch: "REF",
+          isDirty: "DIRTY",
+          lastTag: "TAG",
+          commitsSinceTag: "COUNT",
         },
       });
 
@@ -66,6 +84,9 @@ describe("getGitInfo", () => {
         commitShort: "custom1",
         commitTime: "1111111111",
         branch: "feature/test",
+        isDirty: true,
+        lastTag: "v3.0.0",
+        commitsSinceTag: 3,
       });
     });
 
@@ -79,6 +100,9 @@ describe("getGitInfo", () => {
       expect(info.commitShort).toBe("unknown");
       expect(info.commitTime).toBe("0");
       expect(info.branch).toBe("unknown");
+      expect(info.isDirty).toBe(false);
+      expect(info.lastTag).toBe("");
+      expect(info.commitsSinceTag).toBe(0);
     });
 
     it("should skip env vars when envPrefix is false", () => {
@@ -100,6 +124,25 @@ describe("getGitInfo", () => {
       // Should fall back to git commands since env value is "unknown"
       expect(info.commitHash).not.toBe("unknown");
     });
+
+    it("should parse isDirty as boolean from various string values", () => {
+      // Test "true"
+      process.env.GIT_COMMIT = "abc123";
+      process.env.GIT_IS_DIRTY = "true";
+      expect(getGitInfo().isDirty).toBe(true);
+
+      // Test "1"
+      process.env.GIT_IS_DIRTY = "1";
+      expect(getGitInfo().isDirty).toBe(true);
+
+      // Test "false"
+      process.env.GIT_IS_DIRTY = "false";
+      expect(getGitInfo().isDirty).toBe(false);
+
+      // Test "0"
+      process.env.GIT_IS_DIRTY = "0";
+      expect(getGitInfo().isDirty).toBe(false);
+    });
   });
 
   describe("from git commands", () => {
@@ -118,6 +161,24 @@ describe("getGitInfo", () => {
       expect(info.commitShort).toMatch(/^[a-f0-9]{7,}$/);
       expect(info.commitTime).toMatch(/^\d+$/);
       expect(info.branch).toBeTruthy();
+      expect(typeof info.isDirty).toBe("boolean");
+      expect(typeof info.lastTag).toBe("string");
+      expect(typeof info.commitsSinceTag).toBe("number");
+    });
+
+    it("should detect dirty working tree", () => {
+      // Clear any GIT_ env vars
+      Object.keys(process.env).forEach((key) => {
+        if (key.startsWith("GIT_")) {
+          delete process.env[key];
+        }
+      });
+
+      const info = getGitInfo();
+
+      // Since we have uncommitted changes during test run, isDirty should be true
+      // But this depends on the actual state, so we just check the type
+      expect(typeof info.isDirty).toBe("boolean");
     });
   });
 
@@ -144,6 +205,20 @@ describe("getGitInfo", () => {
       expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe("UNKNOWN_GIT_INFO", () => {
+    it("should have correct default values", () => {
+      expect(UNKNOWN_GIT_INFO).toEqual({
+        commitHash: "unknown",
+        commitShort: "unknown",
+        commitTime: "0",
+        branch: "unknown",
+        isDirty: false,
+        lastTag: "",
+        commitsSinceTag: 0,
+      });
     });
   });
 });
