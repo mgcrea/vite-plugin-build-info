@@ -1,7 +1,11 @@
 {
-  "name": "@mgcrea/vite-plugin-git-info",
+  "name": "@mgcrea/vite-plugin-build-info",
   "version": "0.1.0",
-  "description": "Vite plugin that exposes git information (commit hash, branch, etc.) as a global variable",
+  "description": "Vite plugin that exposes build information (git commit hash, branch, etc.) as a global variable",
+  "author": "Olivier Louvignes <olivier@mgcrea.io> (https://github.com/mgcrea)",
+  "homepage": "https://github.com/mgcrea/vite-plugin-build-info#readme",
+  "repository": "github:mgcrea/vite-plugin-build-info",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -24,6 +28,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -37,21 +43,19 @@
     "version",
     "build-info"
   ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/rgis/vite-plugin-git-info"
-  },
   "peerDependencies": {
     "vite": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
+    "oxlint": "^1.38.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.16"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a"
 }
