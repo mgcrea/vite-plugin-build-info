@@ -1,14 +1,14 @@
 /**
  * @packageDocumentation
- * Vite plugin that exposes git information (commit hash, branch, etc.) as a global variable.
+ * Vite plugin that exposes git and build information as a global variable.
  *
  * @example
  * ```ts
  * // vite.config.ts
- * import { gitInfo } from "@mgcrea/vite-plugin-git-info";
+ * import { buildInfo } from "@mgcrea/vite-plugin-build-info";
  *
  * export default defineConfig({
- *   plugins: [gitInfo()],
+ *   plugins: [buildInfo()],
  * });
  * ```
  */
@@ -19,6 +19,8 @@ export type {
   BuildInfo,
   GitEnvVarNames,
   GetGitInfoOptions,
+  BuildInfoPluginOptions,
+  /** @deprecated Use BuildInfoPluginOptions instead */
   GitInfoPluginOptions,
 } from "./types.js";
 
@@ -28,7 +30,7 @@ export { UNKNOWN_GIT_INFO, DEFAULT_ENV_VAR_NAMES } from "./types.js";
 export { getGitInfo } from "./git.js";
 
 // Plugin
-export { gitInfo } from "./plugin.js";
+export { buildInfo } from "./plugin.js";
 
 // Utilities (for advanced usage)
 export { isValidIdentifier } from "./utils.js";

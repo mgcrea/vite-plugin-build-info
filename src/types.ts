@@ -72,21 +72,26 @@ export interface GetGitInfoOptions {
 /**
  * Plugin configuration options.
  */
-export interface GitInfoPluginOptions extends GetGitInfoOptions {
+export interface BuildInfoPluginOptions extends GetGitInfoOptions {
   /**
-   * The global variable name to use for git info.
+   * The global variable name to use for build info.
    * Must be a valid JavaScript identifier.
-   * @default "__GIT_INFO__"
+   * @default "__BUILD_INFO__"
    */
   globalName?: string;
 
   /**
-   * Whether to include the git info in Vite's define config.
+   * Whether to include the build info in Vite's define config.
    * If false, you can use getGitInfo() to access the info manually.
    * @default true
    */
   define?: boolean;
 }
+
+/**
+ * @deprecated Use BuildInfoPluginOptions instead
+ */
+export type GitInfoPluginOptions = BuildInfoPluginOptions;
 
 /**
  * Default values for unknown git information.

@@ -1,5 +1,5 @@
 import type { Plugin } from "vite";
-import type { BuildInfo, GitInfoPluginOptions } from "./types.js";
+import type { BuildInfo, BuildInfoPluginOptions } from "./types.js";
 import { getGitInfo } from "./git.js";
 import { createDebugLogger, isValidIdentifier } from "./utils.js";
 
@@ -8,7 +8,7 @@ import { createDebugLogger, isValidIdentifier } from "./utils.js";
  * @param options - Plugin options
  * @returns Complete build information
  */
-function createBuildInfo(options: GitInfoPluginOptions): BuildInfo {
+function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
   const gitInfo = getGitInfo(options);
 
   return {
@@ -27,10 +27,10 @@ function createBuildInfo(options: GitInfoPluginOptions): BuildInfo {
  * @example
  * ```ts
  * // vite.config.ts
- * import { gitInfo } from "@mgcrea/vite-plugin-git-info";
+ * import { buildInfo } from "@mgcrea/vite-plugin-build-info";
  *
  * export default defineConfig({
- *   plugins: [gitInfo()],
+ *   plugins: [buildInfo()],
  * });
  * ```
  *
@@ -39,9 +39,9 @@ function createBuildInfo(options: GitInfoPluginOptions): BuildInfo {
  * // With custom options
  * export default defineConfig({
  *   plugins: [
- *     gitInfo({
- *       globalName: "__BUILD_INFO__",
- *       envPrefix: "BUILD_",
+ *     buildInfo({
+ *       globalName: "__APP_INFO__",
+ *       envPrefix: "CI_",
  *       debug: true,
  *     }),
  *   ],
@@ -51,7 +51,7 @@ function createBuildInfo(options: GitInfoPluginOptions): BuildInfo {
  * @example
  * ```ts
  * // In your app
- * declare const __GIT_INFO__: {
+ * declare const __BUILD_INFO__: {
  *   commitHash: string;
  *   commitShort: string;
  *   commitTime: string;
@@ -62,14 +62,14 @@ function createBuildInfo(options: GitInfoPluginOptions): BuildInfo {
  *   buildTime: string;
  * };
  *
- * console.log(__GIT_INFO__.commitShort);  // "abc1234"
- * console.log(__GIT_INFO__.isDirty);      // false
- * console.log(__GIT_INFO__.buildTime);    // "2024-01-15T10:30:00.000Z"
+ * console.log(__BUILD_INFO__.commitShort);  // "abc1234"
+ * console.log(__BUILD_INFO__.isDirty);      // false
+ * console.log(__BUILD_INFO__.buildTime);    // "2024-01-15T10:30:00.000Z"
  * ```
  */
-export function gitInfo(options: GitInfoPluginOptions = {}): Plugin {
+export function buildInfo(options: BuildInfoPluginOptions = {}): Plugin {
   const {
-    globalName = "__GIT_INFO__",
+    globalName = "__BUILD_INFO__",
     define = true,
     debug: debugEnabled = false,
   } = options;
@@ -79,7 +79,7 @@ export function gitInfo(options: GitInfoPluginOptions = {}): Plugin {
   // Validate globalName
   if (!isValidIdentifier(globalName)) {
     throw new Error(
-      `[vite-plugin-git-info] Invalid globalName "${globalName}". Must be a valid JavaScript identifier.`
+      `[vite-plugin-build-info] Invalid globalName "${globalName}". Must be a valid JavaScript identifier.`
     );
   }
 
@@ -89,7 +89,7 @@ export function gitInfo(options: GitInfoPluginOptions = {}): Plugin {
   debug(`Global name: ${globalName}, define: ${define}`);
 
   return {
-    name: "vite-plugin-git-info",
+    name: "vite-plugin-build-info",
     config() {
       if (!define) {
         debug("Define disabled, skipping injection");
@@ -107,4 +107,4 @@ export function gitInfo(options: GitInfoPluginOptions = {}): Plugin {
   };
 }
 
-export default gitInfo;
+export default buildInfo;
