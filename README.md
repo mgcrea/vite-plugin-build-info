@@ -1,4 +1,4 @@
-# vite-plugin-git-info
+# vite-plugin-build-info
 
 A Vite plugin that exposes git and build information as a global variable in your application. Perfect for displaying version information, build timestamps, and tracking deployments.
 
@@ -14,11 +14,11 @@ A Vite plugin that exposes git and build information as a global variable in you
 ## Installation
 
 ```bash
-npm install @mgcrea/vite-plugin-git-info --save-dev
+npm install @mgcrea/vite-plugin-build-info --save-dev
 # or
-pnpm add -D @mgcrea/vite-plugin-git-info
+pnpm add -D @mgcrea/vite-plugin-build-info
 # or
-yarn add -D @mgcrea/vite-plugin-git-info
+yarn add -D @mgcrea/vite-plugin-build-info
 ```
 
 ## Usage
@@ -28,10 +28,10 @@ yarn add -D @mgcrea/vite-plugin-git-info
 ```ts
 // vite.config.ts
 import { defineConfig } from "vite";
-import { gitInfo } from "@mgcrea/vite-plugin-git-info";
+import { buildInfo } from "@mgcrea/vite-plugin-build-info";
 
 export default defineConfig({
-  plugins: [gitInfo()],
+  plugins: [buildInfo()],
 });
 ```
 
@@ -39,7 +39,7 @@ Then in your application:
 
 ```ts
 // Add type declaration (or add to a .d.ts file)
-declare const __GIT_INFO__: {
+declare const __BUILD_INFO__: {
   commitHash: string;
   commitShort: string;
   commitTime: string;
@@ -51,20 +51,20 @@ declare const __GIT_INFO__: {
 };
 
 // Display version info
-console.log(`Build: ${__GIT_INFO__.commitShort}`);
-console.log(`Branch: ${__GIT_INFO__.branch}`);
-console.log(`Built: ${new Date(__GIT_INFO__.buildTime).toLocaleString()}`);
+console.log(`Build: ${__BUILD_INFO__.commitShort}`);
+console.log(`Branch: ${__BUILD_INFO__.branch}`);
+console.log(`Built: ${new Date(__BUILD_INFO__.buildTime).toLocaleString()}`);
 
 // Show if there were uncommitted changes
-if (__GIT_INFO__.isDirty) {
+if (__BUILD_INFO__.isDirty) {
   console.warn("Built from dirty working tree");
 }
 
 // Display version from tags
-if (__GIT_INFO__.lastTag) {
-  const version = __GIT_INFO__.commitsSinceTag === 0
-    ? __GIT_INFO__.lastTag
-    : `${__GIT_INFO__.lastTag}+${__GIT_INFO__.commitsSinceTag}`;
+if (__BUILD_INFO__.lastTag) {
+  const version = __BUILD_INFO__.commitsSinceTag === 0
+    ? __BUILD_INFO__.lastTag
+    : `${__BUILD_INFO__.lastTag}+${__BUILD_INFO__.commitsSinceTag}`;
   console.log(`Version: ${version}`);
 }
 ```
@@ -74,22 +74,22 @@ if (__GIT_INFO__.lastTag) {
 For better TypeScript support, you can use the provided types:
 
 ```ts
-import type { BuildInfo } from "@mgcrea/vite-plugin-git-info";
+import type { BuildInfo } from "@mgcrea/vite-plugin-build-info";
 
 declare global {
-  const __GIT_INFO__: BuildInfo;
+  const __BUILD_INFO__: BuildInfo;
 }
 ```
 
 ### Custom Global Name
 
 ```ts
-import { gitInfo } from "@mgcrea/vite-plugin-git-info";
+import { buildInfo } from "@mgcrea/vite-plugin-build-info";
 
 export default defineConfig({
   plugins: [
-    gitInfo({
-      globalName: "__BUILD_INFO__",
+    buildInfo({
+      globalName: "__APP_INFO__",
     }),
   ],
 });
@@ -100,8 +100,8 @@ export default defineConfig({
 Enable debug logging to troubleshoot:
 
 ```ts
-gitInfo({
-  debug: true, // Logs git info retrieval process
+buildInfo({
+  debug: true, // Logs build info retrieval process
 });
 ```
 
@@ -145,7 +145,7 @@ docker build \
 ### Custom Environment Variables
 
 ```ts
-gitInfo({
+buildInfo({
   envPrefix: "CI_",
   envVars: {
     commitHash: "COMMIT_SHA",
@@ -163,7 +163,7 @@ gitInfo({
 If you want to use the git info in your Vite config without defining a global:
 
 ```ts
-import { getGitInfo } from "@mgcrea/vite-plugin-git-info";
+import { getGitInfo } from "@mgcrea/vite-plugin-build-info";
 
 const git = getGitInfo();
 
@@ -178,7 +178,7 @@ export default defineConfig({
     }),
   },
   plugins: [
-    gitInfo({ define: false }), // Don't auto-inject
+    buildInfo({ define: false }), // Don't auto-inject
   ],
 });
 ```
@@ -187,7 +187,7 @@ export default defineConfig({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `globalName` | `string` | `"__GIT_INFO__"` | The global variable name (must be valid JS identifier) |
+| `globalName` | `string` | `"__BUILD_INFO__"` | The global variable name (must be valid JS identifier) |
 | `envPrefix` | `string \| false` | `"GIT_"` | Environment variable prefix, or `false` to disable |
 | `envVars` | `object` | See below | Custom environment variable names |
 | `define` | `boolean` | `true` | Whether to add to Vite's define config |
@@ -248,8 +248,8 @@ interface GitInfo {
 ```tsx
 // Footer.tsx
 export function Footer() {
-  const version = __GIT_INFO__.lastTag || __GIT_INFO__.commitShort;
-  const isDev = __GIT_INFO__.isDirty;
+  const version = __BUILD_INFO__.lastTag || __BUILD_INFO__.commitShort;
+  const isDev = __BUILD_INFO__.isDirty;
 
   return (
     <footer>
@@ -257,7 +257,7 @@ export function Footer() {
         Version: {version}
         {isDev && <span className="badge">DEV</span>}
       </p>
-      <p>Built: {new Date(__GIT_INFO__.buildTime).toLocaleString()}</p>
+      <p>Built: {new Date(__BUILD_INFO__.buildTime).toLocaleString()}</p>
     </footer>
   );
 }
@@ -267,7 +267,7 @@ export function Footer() {
 
 ```ts
 function getSemanticVersion(): string {
-  const { lastTag, commitsSinceTag, commitShort, isDirty } = __GIT_INFO__;
+  const { lastTag, commitsSinceTag, commitShort, isDirty } = __BUILD_INFO__;
 
   if (!lastTag) {
     return `0.0.0-dev.${commitShort}`;
@@ -286,9 +286,9 @@ console.log(getSemanticVersion()); // e.g., "v1.2.3+5.abc1234-dirty"
 ### Environment Detection
 
 ```ts
-const isProduction = !__GIT_INFO__.isDirty && __GIT_INFO__.branch === "main";
-const isStaging = __GIT_INFO__.branch === "staging";
-const isDevelopment = __GIT_INFO__.isDirty || __GIT_INFO__.branch === "develop";
+const isProduction = !__BUILD_INFO__.isDirty && __BUILD_INFO__.branch === "main";
+const isStaging = __BUILD_INFO__.branch === "staging";
+const isDevelopment = __BUILD_INFO__.isDirty || __BUILD_INFO__.branch === "develop";
 ```
 
 ## How It Works
