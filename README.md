@@ -261,8 +261,7 @@ export function Footer() {
   return (
     <footer>
       <p>
-        {name} v{version} ({commitShort})
-        {isDirty && <span className="badge">DEV</span>}
+        {name} v{version} ({commitShort}){isDirty && <span className="badge">DEV</span>}
       </p>
       <p>Built: {new Date(buildTime).toLocaleString()}</p>
     </footer>
