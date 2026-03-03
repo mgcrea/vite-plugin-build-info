@@ -1,7 +1,24 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Plugin } from "vite";
 import type { BuildInfo, BuildInfoPluginOptions } from "./types.js";
 import { getGitInfo } from "./git.js";
 import { createDebugLogger, isValidIdentifier } from "./utils.js";
+
+/**
+ * Reads name and version from the nearest package.json.
+ * Used as a fallback when npm_package_* env vars are not available
+ * (e.g., when vite is invoked directly instead of via `npm run`).
+ */
+function readPackageJson(cwd: string): { name: string; version: string } {
+  try {
+    const raw = readFileSync(join(cwd, "package.json"), "utf-8");
+    const pkg = JSON.parse(raw) as { name?: string; version?: string };
+    return { name: pkg.name ?? "", version: pkg.version ?? "" };
+  } catch {
+    return { name: "", version: "" };
+  }
+}
 
 /**
  * Creates build info by combining git info with build metadata.
@@ -10,10 +27,13 @@ import { createDebugLogger, isValidIdentifier } from "./utils.js";
  */
 function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
   const gitInfo = getGitInfo(options);
+  const name = process.env.npm_package_name;
+  const version = process.env.npm_package_version;
+  const pkg = name == null && version == null ? readPackageJson(process.cwd()) : undefined;
 
   return {
-    name: process.env.npm_package_name ?? "",
-    version: process.env.npm_package_version ?? "",
+    name: name ?? pkg?.name ?? "",
+    version: version ?? pkg?.version ?? "",
     ...gitInfo,
     buildTime: new Date().toISOString(),
   };
