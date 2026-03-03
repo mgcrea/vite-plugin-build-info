@@ -1,6 +1,6 @@
 {
   "name": "@mgcrea/vite-plugin-build-info",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Vite plugin that exposes build information (git commit hash, branch, etc.) as a global variable",
   "author": "Olivier Louvignes <olivier@mgcrea.io> (https://github.com/mgcrea)",
   "homepage": "https://github.com/mgcrea/vite-plugin-build-info#readme",
