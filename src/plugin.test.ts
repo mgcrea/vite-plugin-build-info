@@ -79,7 +79,7 @@ describe("buildInfo plugin", () => {
     expect(info.version).toBe("1.2.3");
   });
 
-  it("should default to empty strings when npm env vars are not set", () => {
+  it("should fall back to package.json when npm env vars are not set", () => {
     delete process.env.npm_package_name;
     delete process.env.npm_package_version;
 
@@ -91,8 +91,9 @@ describe("buildInfo plugin", () => {
 
     const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
 
-    expect(info.name).toBe("");
-    expect(info.version).toBe("");
+    // Should read from the project's own package.json
+    expect(info.name).toBe("@mgcrea/vite-plugin-build-info");
+    expect(info.version).toBeTruthy();
   });
 
   it("should use custom globalName", () => {
