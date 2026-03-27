@@ -1,0 +1,9 @@
+{
+  "semi": true,
+  "singleQuote": false,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "sortPackageJson": false,
+  "ignorePatterns": ["dist", "node_modules", "coverage", "pnpm-lock.yaml"]
+}
