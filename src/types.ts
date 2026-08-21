@@ -100,7 +100,7 @@ export type GitInfoPluginOptions = BuildInfoPluginOptions;
 /**
  * Default values for unknown git information.
  */
-export const UNKNOWN_GIT_INFO: GitInfo = {
+export const UNKNOWN_GIT_INFO = {
   commitHash: "unknown",
   commitShort: "unknown",
   commitTime: "0",
@@ -108,12 +108,12 @@ export const UNKNOWN_GIT_INFO: GitInfo = {
   isDirty: false,
   lastTag: "",
   commitsSinceTag: 0,
-} as const;
+} as const satisfies GitInfo;
 
 /**
  * Default environment variable suffixes.
  */
-export const DEFAULT_ENV_VAR_NAMES: Required<GitEnvVarNames> = {
+export const DEFAULT_ENV_VAR_NAMES = {
   commitHash: "COMMIT",
   commitShort: "COMMIT_SHORT",
   commitTime: "COMMIT_TIME",
@@ -121,4 +121,4 @@ export const DEFAULT_ENV_VAR_NAMES: Required<GitEnvVarNames> = {
   isDirty: "IS_DIRTY",
   lastTag: "LAST_TAG",
   commitsSinceTag: "COMMITS_SINCE_TAG",
-} as const;
+} as const satisfies Required<GitEnvVarNames>;

@@ -1,18 +1,18 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { resolve } from "node:path";
 import type { Plugin } from "vite";
 import type { BuildInfo, BuildInfoPluginOptions } from "./types.js";
 import { getGitInfo } from "./git.js";
 import { createDebugLogger, isValidIdentifier } from "./utils.js";
 
 /**
- * Reads name and version from the nearest package.json.
+ * Reads name and version from the package.json at the given root.
  * Used as a fallback when npm_package_* env vars are not available
  * (e.g., when vite is invoked directly instead of via `npm run`).
  */
-function readPackageJson(cwd: string): { name: string; version: string } {
+function readPackageJson(root: string): { name: string; version: string } {
   try {
-    const raw = readFileSync(join(cwd, "package.json"), "utf-8");
+    const raw = readFileSync(resolve(root, "package.json"), "utf-8");
     const pkg = JSON.parse(raw) as { name?: string; version?: string };
     return { name: pkg.name ?? "", version: pkg.version ?? "" };
   } catch {
@@ -23,14 +23,14 @@ function readPackageJson(cwd: string): { name: string; version: string } {
 /**
  * Creates build info by combining git info with build metadata.
  * @param options - Plugin options
+ * @param root - Project root used to locate package.json
  * @returns Complete build information
  */
-function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
+function createBuildInfo(options: BuildInfoPluginOptions, root: string): BuildInfo {
   const gitInfo = getGitInfo(options);
   const name = process.env.npm_package_name;
   const version = process.env.npm_package_version;
-  const pkg =
-    name === undefined || version === undefined ? readPackageJson(process.cwd()) : undefined;
+  const pkg = name === undefined || version === undefined ? readPackageJson(root) : undefined;
 
   return {
     name: name ?? pkg?.name ?? "",
@@ -104,19 +104,23 @@ export function buildInfo(options: BuildInfoPluginOptions = {}): Plugin {
     );
   }
 
-  const info = createBuildInfo({ ...options, debug: debugEnabled });
-
-  debug(`Build info retrieved: ${JSON.stringify(info)}`);
   debug(`Global name: ${globalName}, define: ${define}`);
 
   return {
     name: "vite-plugin-build-info",
-    config() {
+    // Gathering the info is deferred to `config()` so that merely evaluating
+    // vite.config.ts never shells out to git, and so package.json is looked up
+    // under the root Vite was actually given rather than the process cwd.
+    config(userConfig) {
       if (!define) {
         debug("Define disabled, skipping injection");
         return;
       }
 
+      const root = userConfig.root ?? process.cwd();
+      const info = createBuildInfo({ ...options, debug: debugEnabled }, root);
+
+      debug(`Build info retrieved: ${JSON.stringify(info)}`);
       debug(`Injecting ${globalName} into Vite define config`);
 
       return {

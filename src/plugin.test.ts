@@ -1,6 +1,28 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { buildInfo } from "./plugin.js";
-import type { Plugin } from "vite";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
+import type { Plugin, UserConfig } from "vite";
+
+type ConfigHookResult = Omit<UserConfig, "plugins"> | null | void;
+
+/**
+ * Invokes a plugin's `config` hook.
+ *
+ * Vite types `config` as an ObjectHook, so it is either the function itself or
+ * a `{ handler }` wrapper; unwrap it rather than asserting it is callable.
+ */
+function callConfigHook(plugin: Plugin, userConfig: UserConfig = {}): ConfigHookResult {
+  const hook = plugin.config;
+  const handler = typeof hook === "function" ? hook : hook?.handler;
+  if (!handler) {
+    throw new Error("plugin does not define a config hook");
+  }
+  return handler.call(undefined as never, userConfig, {
+    command: "build",
+    mode: "production",
+  }) as ConfigHookResult;
+}
 
 describe("buildInfo plugin", () => {
   const originalEnv = process.env;
@@ -27,15 +49,12 @@ describe("buildInfo plugin", () => {
     const plugin = buildInfo();
 
     expect(plugin.name).toBe("vite-plugin-build-info");
-    expect(typeof plugin.config).toBe("function");
+    expect(plugin.config).toBeDefined();
   });
 
   it("should inject build info into define config with __BUILD_INFO__ as default", () => {
     const plugin = buildInfo();
-    const config = (plugin.config as NonNullable<Plugin["config"]>)(
-      {},
-      { command: "build", mode: "production" },
-    );
+    const config = callConfigHook(plugin);
 
     expect(config).toBeDefined();
     expect(config?.define).toBeDefined();
@@ -53,10 +72,7 @@ describe("buildInfo plugin", () => {
 
   it("should include buildTime in output", () => {
     const plugin = buildInfo();
-    const config = (plugin.config as NonNullable<Plugin["config"]>)(
-      {},
-      { command: "build", mode: "production" },
-    );
+    const config = callConfigHook(plugin);
 
     const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
 
@@ -68,10 +84,7 @@ describe("buildInfo plugin", () => {
 
   it("should include package name and version from npm env vars", () => {
     const plugin = buildInfo();
-    const config = (plugin.config as NonNullable<Plugin["config"]>)(
-      {},
-      { command: "build", mode: "production" },
-    );
+    const config = callConfigHook(plugin);
 
     const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
 
@@ -84,10 +97,7 @@ describe("buildInfo plugin", () => {
     delete process.env.npm_package_version;
 
     const plugin = buildInfo();
-    const config = (plugin.config as NonNullable<Plugin["config"]>)(
-      {},
-      { command: "build", mode: "production" },
-    );
+    const config = callConfigHook(plugin);
 
     const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
 
@@ -98,10 +108,7 @@ describe("buildInfo plugin", () => {
 
   it("should use custom globalName", () => {
     const plugin = buildInfo({ globalName: "__APP_INFO__" });
-    const config = (plugin.config as NonNullable<Plugin["config"]>)(
-      {},
-      { command: "build", mode: "production" },
-    );
+    const config = callConfigHook(plugin);
 
     expect(config?.define?.["__APP_INFO__"]).toBeDefined();
     expect(config?.define?.["__BUILD_INFO__"]).toBeUndefined();
@@ -109,12 +116,34 @@ describe("buildInfo plugin", () => {
 
   it("should not inject when define is false", () => {
     const plugin = buildInfo({ define: false });
-    const config = (plugin.config as NonNullable<Plugin["config"]>)(
-      {},
-      { command: "build", mode: "production" },
-    );
+    const config = callConfigHook(plugin);
 
     expect(config).toBeUndefined();
+  });
+
+  it("should resolve package.json from the Vite root, not the process cwd", () => {
+    delete process.env.npm_package_name;
+    delete process.env.npm_package_version;
+
+    const plugin = buildInfo();
+    // A root with no package.json must not silently inherit the cwd's package.
+    const config = callConfigHook(plugin, { root: resolve(tmpdir(), "vite-plugin-build-info-nx") });
+
+    const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
+    expect(info.name).toBe("");
+    expect(info.version).toBe("");
+  });
+
+  it("should not gather build info until the config hook runs", () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const plugin = buildInfo({ debug: true });
+    expect(consoleSpy.mock.calls.flat().join("\n")).not.toContain("Build info retrieved");
+
+    callConfigHook(plugin);
+    expect(consoleSpy.mock.calls.flat().join("\n")).toContain("Build info retrieved");
+
+    consoleSpy.mockRestore();
   });
 
   it("should throw error for invalid globalName", () => {
@@ -123,6 +152,7 @@ describe("buildInfo plugin", () => {
     );
     expect(() => buildInfo({ globalName: "foo-bar" })).toThrow('Invalid globalName "foo-bar"');
     expect(() => buildInfo({ globalName: "" })).toThrow('Invalid globalName ""');
+    expect(() => buildInfo({ globalName: "class" })).toThrow('Invalid globalName "class"');
   });
 
   it("should accept valid globalName variations", () => {
@@ -142,10 +172,7 @@ describe("buildInfo plugin", () => {
     process.env.BUILD_COMMITS_SINCE_TAG = "10";
 
     const plugin = buildInfo({ envPrefix: "BUILD_" });
-    const config = (plugin.config as NonNullable<Plugin["config"]>)(
-      {},
-      { command: "build", mode: "production" },
-    );
+    const config = callConfigHook(plugin);
 
     const info = JSON.parse(config!.define!["__BUILD_INFO__"] as string);
     expect(info.commitHash).toBe("custom_commit");

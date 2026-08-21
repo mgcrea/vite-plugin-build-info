@@ -18,7 +18,17 @@ describe("isValidIdentifier", () => {
     expect(isValidIdentifier("foo-bar")).toBe(false);
     expect(isValidIdentifier("foo.bar")).toBe(false);
     expect(isValidIdentifier("foo bar")).toBe(false);
-    expect(isValidIdentifier("class")).toBe(true); // Reserved words are valid identifiers syntactically
+  });
+
+  it("should reject reserved words", () => {
+    // Identifier-shaped, but Vite's define would rewrite real keywords.
+    expect(isValidIdentifier("class")).toBe(false);
+    expect(isValidIdentifier("function")).toBe(false);
+    expect(isValidIdentifier("await")).toBe(false);
+    expect(isValidIdentifier("null")).toBe(false);
+    // Not reserved despite looking close.
+    expect(isValidIdentifier("classes")).toBe(true);
+    expect(isValidIdentifier("Class")).toBe(true);
   });
 
   it("should reject non-string inputs", () => {

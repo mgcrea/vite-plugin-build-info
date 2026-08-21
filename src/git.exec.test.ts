@@ -54,6 +54,50 @@ describe("git command execution", () => {
     expect(revListCall?.[1]).toEqual(["rev-list", "--count", `${MALICIOUS_TAG}..HEAD`]);
   });
 
+  it("should fall back to a CI branch variable on a detached HEAD", () => {
+    const originalEnv = process.env;
+    process.env = { ...originalEnv, GITHUB_REF_NAME: "release/1.2" };
+    delete process.env.GITHUB_HEAD_REF;
+
+    try {
+      mockGit({
+        "rev-parse HEAD": COMMIT_HASH,
+        "rev-parse --short HEAD": "abc123d",
+        "log -1 --format=%ct": "1234567890",
+        // What a CI provider's detached checkout actually reports.
+        "rev-parse --abbrev-ref HEAD": "HEAD",
+        "status --porcelain": "",
+        "describe --tags --abbrev=0": "v1.0.0",
+        "rev-list --count v1.0.0..HEAD": "2",
+      });
+
+      expect(getGitInfo({ envPrefix: false }).branch).toBe("release/1.2");
+    } finally {
+      process.env = originalEnv;
+    }
+  });
+
+  it("should prefer the real branch over CI variables when not detached", () => {
+    const originalEnv = process.env;
+    process.env = { ...originalEnv, GITHUB_REF_NAME: "release/1.2" };
+
+    try {
+      mockGit({
+        "rev-parse HEAD": COMMIT_HASH,
+        "rev-parse --short HEAD": "abc123d",
+        "log -1 --format=%ct": "1234567890",
+        "rev-parse --abbrev-ref HEAD": "feature/local",
+        "status --porcelain": "",
+        "describe --tags --abbrev=0": "v1.0.0",
+        "rev-list --count v1.0.0..HEAD": "2",
+      });
+
+      expect(getGitInfo({ envPrefix: false }).branch).toBe("feature/local");
+    } finally {
+      process.env = originalEnv;
+    }
+  });
+
   it("should fall back to unknown info when git is unavailable", () => {
     execFileSync.mockImplementation(() => {
       throw new Error("git not found");

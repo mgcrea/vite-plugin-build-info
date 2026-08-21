@@ -189,14 +189,14 @@ export default defineConfig({
 
 ## Options
 
-| Option       | Type              | Default            | Description                                            |
-| ------------ | ----------------- | ------------------ | ------------------------------------------------------ |
-| `globalName` | `string`          | `"__BUILD_INFO__"` | The global variable name (must be valid JS identifier) |
-| `envPrefix`  | `string \| false` | `"GIT_"`           | Environment variable prefix, or `false` to disable     |
-| `envVars`    | `object`          | See below          | Custom environment variable names                      |
-| `define`     | `boolean`         | `true`             | Whether to add to Vite's define config                 |
-| `timeout`    | `number`          | `5000`             | Timeout for git commands in milliseconds               |
-| `debug`      | `boolean`         | `false`            | Enable debug logging                                   |
+| Option       | Type              | Default            | Description                                                                      |
+| ------------ | ----------------- | ------------------ | -------------------------------------------------------------------------------- |
+| `globalName` | `string`          | `"__BUILD_INFO__"` | The global variable name (must be a valid JS identifier and not a reserved word) |
+| `envPrefix`  | `string \| false` | `"GIT_"`           | Environment variable prefix, or `false` to disable                               |
+| `envVars`    | `object`          | See below          | Custom environment variable names                                                |
+| `define`     | `boolean`         | `true`             | Whether to add to Vite's define config                                           |
+| `timeout`    | `number`          | `5000`             | Timeout for git commands in milliseconds                                         |
+| `debug`      | `boolean`         | `false`            | Enable debug logging                                                             |
 
 ### Default Environment Variables
 
@@ -209,6 +209,17 @@ export default defineConfig({
 | `isDirty`         | `GIT_IS_DIRTY`          | "true" or "1" if working tree is dirty |
 | `lastTag`         | `GIT_LAST_TAG`          | Most recent tag name                   |
 | `commitsSinceTag` | `GIT_COMMITS_SINCE_TAG` | Number of commits since last tag       |
+
+### Detached HEAD builds
+
+Most CI providers check out a detached HEAD, where `git rev-parse --abbrev-ref HEAD`
+reports `HEAD` instead of a branch name. When that happens the plugin falls back to
+the branch name exposed by the CI provider, in this order:
+
+`GITHUB_HEAD_REF`, `GITHUB_REF_NAME`, `CI_COMMIT_REF_NAME`, `VERCEL_GIT_COMMIT_REF`,
+`CF_PAGES_BRANCH`, `BUILD_SOURCEBRANCHNAME`.
+
+Setting `GIT_BRANCH` explicitly always takes precedence over both.
 
 ## Types
 
@@ -303,6 +314,10 @@ const isDevelopment = __BUILD_INFO__.isDirty || __BUILD_INFO__.branch === "devel
 2. **Git Command Fallback**: Otherwise the plugin runs git commands at build time to gather repository information
 3. **Build Injection**: Information is injected into your bundle via Vite's `define` feature
 4. **No Runtime Overhead**: All data is computed at build time and embedded as constants
+
+Information is gathered when Vite resolves its config, not when `buildInfo()` is
+called, so importing the plugin never shells out to git on its own. `package.json`
+is read from the `root` Vite is configured with.
 
 ## License
 

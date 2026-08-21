@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import type { GetGitInfoOptions, GitInfo } from "./types.js";
+import type { GetGitInfoOptions, GitEnvVarNames, GitInfo } from "./types.js";
 import { DEFAULT_ENV_VAR_NAMES, UNKNOWN_GIT_INFO } from "./types.js";
 import { createDebugLogger, getEnvVar } from "./utils.js";
 
@@ -62,6 +62,47 @@ function parseCount(value: string | null | undefined): number {
 }
 
 /**
+ * Environment variables exposing the branch name, in precedence order.
+ *
+ * Most CI providers check out a detached HEAD, in which case
+ * `git rev-parse --abbrev-ref HEAD` reports "HEAD" rather than a branch.
+ */
+const CI_BRANCH_ENV_VARS = [
+  "GITHUB_HEAD_REF", // GitHub Actions (pull requests)
+  "GITHUB_REF_NAME", // GitHub Actions (pushes)
+  "CI_COMMIT_REF_NAME", // GitLab CI
+  "VERCEL_GIT_COMMIT_REF", // Vercel
+  "CF_PAGES_BRANCH", // Cloudflare Pages
+  "BUILD_SOURCEBRANCHNAME", // Azure Pipelines
+] as const;
+
+/**
+ * Resolves the current branch, falling back to CI environment variables when
+ * the checkout is detached.
+ *
+ * @param timeout - Timeout in milliseconds
+ * @param debug - Debug logger function
+ * @returns The branch name, or "unknown" if it cannot be determined
+ */
+function resolveBranch(timeout: number, debug: (msg: string) => void): string {
+  const branch = execGitCommand(GIT_COMMANDS.branch, timeout);
+
+  if (branch && branch !== "HEAD") {
+    return branch;
+  }
+
+  for (const key of CI_BRANCH_ENV_VARS) {
+    const value = getEnvVar(key);
+    if (value) {
+      debug(`Detached HEAD, using branch from ${key}`);
+      return value;
+    }
+  }
+
+  return branch ?? "unknown";
+}
+
+/**
  * Checks if the working tree has uncommitted changes.
  * @param timeout - Timeout in milliseconds
  * @returns True if dirty, false if clean
@@ -105,7 +146,7 @@ function getTagInfo(timeout: number): { lastTag: string; commitsSinceTag: number
  */
 function getGitInfoFromEnv(
   envPrefix: string,
-  envVars: Required<typeof DEFAULT_ENV_VAR_NAMES>,
+  envVars: Required<GitEnvVarNames>,
   debug: (msg: string) => void,
 ): GitInfo | null {
   const commitHashKey = `${envPrefix}${envVars.commitHash}`;
@@ -153,7 +194,7 @@ function getGitInfoFromCommands(timeout: number, debug: (msg: string) => void): 
     commitHash,
     commitShort: execGitCommand(GIT_COMMANDS.commitShort, timeout) ?? "unknown",
     commitTime: execGitCommand(GIT_COMMANDS.commitTime, timeout) ?? "0",
-    branch: execGitCommand(GIT_COMMANDS.branch, timeout) ?? "unknown",
+    branch: resolveBranch(timeout, debug),
     isDirty: checkIsDirty(timeout),
     ...tagInfo,
   };

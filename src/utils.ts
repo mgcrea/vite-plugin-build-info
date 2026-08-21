@@ -1,10 +1,70 @@
 /**
- * Validates that a string is a valid JavaScript identifier.
+ * Reserved words that are syntactically identifier-shaped but cannot be used as
+ * a global name. Vite's `define` performs identifier-boundary replacement, so a
+ * reserved word would rewrite real language keywords in the output bundle.
+ */
+const RESERVED_WORDS = new Set([
+  "await",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "enum",
+  "export",
+  "extends",
+  "false",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "implements",
+  "import",
+  "in",
+  "instanceof",
+  "interface",
+  "let",
+  "new",
+  "null",
+  "package",
+  "private",
+  "protected",
+  "public",
+  "return",
+  "static",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "true",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+]);
+
+/**
+ * Validates that a string is usable as a global variable name.
+ *
+ * Requires a valid JavaScript identifier that is not a reserved word.
+ *
  * @param name - The string to validate
  * @returns True if valid, false otherwise
  */
 export function isValidIdentifier(name: string): boolean {
   if (!name || typeof name !== "string") {
+    return false;
+  }
+  if (RESERVED_WORDS.has(name)) {
     return false;
   }
   // Valid JS identifier: starts with letter, $, or _, followed by letters, digits, $, or _
