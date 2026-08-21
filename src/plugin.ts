@@ -29,7 +29,8 @@ function createBuildInfo(options: BuildInfoPluginOptions): BuildInfo {
   const gitInfo = getGitInfo(options);
   const name = process.env.npm_package_name;
   const version = process.env.npm_package_version;
-  const pkg = name == null && version == null ? readPackageJson(process.cwd()) : undefined;
+  const pkg =
+    name === undefined || version === undefined ? readPackageJson(process.cwd()) : undefined;
 
   return {
     name: name ?? pkg?.name ?? "",

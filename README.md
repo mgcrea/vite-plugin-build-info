@@ -299,8 +299,8 @@ const isDevelopment = __BUILD_INFO__.isDirty || __BUILD_INFO__.branch === "devel
 
 ## How It Works
 
-1. **Git Commands**: The plugin runs git commands at build time to gather repository information
-2. **Environment Fallback**: If git commands fail (e.g., in Docker), it checks environment variables
+1. **Environment Variables First**: The plugin looks for `GIT_COMMIT` and friends (see [Environment Variables](#environment-variables)). If a valid commit hash is found, those values are used as-is and no git command runs. This is what makes Docker builds without a `.git` directory work — but note that a stale `GIT_COMMIT` left in your shell will also take precedence over your actual repository state. Pass `envPrefix: false` to disable the lookup entirely.
+2. **Git Command Fallback**: Otherwise the plugin runs git commands at build time to gather repository information
 3. **Build Injection**: Information is injected into your bundle via Vite's `define` feature
 4. **No Runtime Overhead**: All data is computed at build time and embedded as constants
 

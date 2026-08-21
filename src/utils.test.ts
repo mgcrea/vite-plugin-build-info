@@ -42,7 +42,7 @@ describe("createDebugLogger", () => {
   it("should log when enabled", () => {
     const debug = createDebugLogger(true);
     debug("test message");
-    expect(consoleSpy).toHaveBeenCalledWith("[vite-plugin-git-info] test message");
+    expect(consoleSpy).toHaveBeenCalledWith("[vite-plugin-build-info] test message");
   });
 
   it("should not log when disabled", () => {

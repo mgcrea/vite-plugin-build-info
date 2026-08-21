@@ -22,7 +22,7 @@ export function createDebugLogger(enabled: boolean): (message: string) => void {
     return () => {};
   }
   return (message: string) => {
-    console.log(`[vite-plugin-git-info] ${message}`);
+    console.log(`[vite-plugin-build-info] ${message}`);
   };
 }
 

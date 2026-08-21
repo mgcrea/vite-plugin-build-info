@@ -33,6 +33,7 @@
     "dev": "tsdown --watch",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
+    "check": "tsc --noEmit",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "test": "vitest run",

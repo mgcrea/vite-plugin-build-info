@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import type { GetGitInfoOptions, GitInfo } from "./types.js";
 import { DEFAULT_ENV_VAR_NAMES, UNKNOWN_GIT_INFO } from "./types.js";
 import { createDebugLogger, getEnvVar } from "./utils.js";
@@ -7,28 +7,34 @@ import { createDebugLogger, getEnvVar } from "./utils.js";
 const DEFAULT_TIMEOUT = 5000;
 
 /**
- * Git commands used to retrieve repository information.
+ * Git command arguments used to retrieve repository information.
+ * Stored as argument arrays so they can be passed to `execFileSync` without a shell.
  */
 const GIT_COMMANDS = {
-  commitHash: "git rev-parse HEAD",
-  commitShort: "git rev-parse --short HEAD",
-  commitTime: "git log -1 --format=%ct",
-  branch: "git rev-parse --abbrev-ref HEAD",
-  isDirty: "git status --porcelain",
-  lastTag: "git describe --tags --abbrev=0",
-  commitsSinceTag: "git rev-list --count",
-  totalCommits: "git rev-list --count HEAD",
-} as const;
+  commitHash: ["rev-parse", "HEAD"],
+  commitShort: ["rev-parse", "--short", "HEAD"],
+  commitTime: ["log", "-1", "--format=%ct"],
+  branch: ["rev-parse", "--abbrev-ref", "HEAD"],
+  isDirty: ["status", "--porcelain"],
+  lastTag: ["describe", "--tags", "--abbrev=0"],
+  totalCommits: ["rev-list", "--count", "HEAD"],
+} as const satisfies Record<string, readonly string[]>;
 
 /**
  * Executes a git command and returns the trimmed output.
- * @param command - The git command to execute
+ *
+ * Uses `execFileSync` rather than `execSync` so arguments are never passed
+ * through a shell. Git allows `$()`, backticks, `;` and `|` in tag names, so
+ * interpolating a tag into a shell string would allow a crafted repository to
+ * execute arbitrary commands at build time.
+ *
+ * @param args - The git arguments to execute
  * @param timeout - Timeout in milliseconds
  * @returns The command output or null if it failed
  */
-function execGitCommand(command: string, timeout: number): string | null {
+function execGitCommand(args: readonly string[], timeout: number): string | null {
   try {
-    return execSync(command, {
+    return execFileSync("git", args, {
       encoding: "utf-8",
       timeout,
       stdio: ["pipe", "pipe", "pipe"],
@@ -36,6 +42,23 @@ function execGitCommand(command: string, timeout: number): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Parses a commit count, falling back to 0 for missing or malformed values.
+ *
+ * Guards against `NaN`, which `JSON.stringify` would emit as `null` and break
+ * the declared `number` type of `commitsSinceTag` in the injected global.
+ *
+ * @param value - The raw value to parse
+ * @returns A finite commit count
+ */
+function parseCount(value: string | null | undefined): number {
+  if (!value) {
+    return 0;
+  }
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /**
@@ -58,20 +81,18 @@ function getTagInfo(timeout: number): { lastTag: string; commitsSinceTag: number
 
   if (!lastTag) {
     // No tags exist, count total commits
-    const totalCommits = execGitCommand(GIT_COMMANDS.totalCommits, timeout);
     return {
       lastTag: "",
-      commitsSinceTag: totalCommits ? parseInt(totalCommits, 10) : 0,
+      commitsSinceTag: parseCount(execGitCommand(GIT_COMMANDS.totalCommits, timeout)),
     };
   }
 
   // Count commits since the tag
-  const countCommand = `${GIT_COMMANDS.commitsSinceTag} ${lastTag}..HEAD`;
-  const count = execGitCommand(countCommand, timeout);
+  const count = execGitCommand(["rev-list", "--count", `${lastTag}..HEAD`], timeout);
 
   return {
     lastTag,
-    commitsSinceTag: count ? parseInt(count, 10) : 0,
+    commitsSinceTag: parseCount(count),
   };
 }
 
@@ -98,7 +119,6 @@ function getGitInfoFromEnv(
   debug(`Found git info in environment variables (prefix: ${envPrefix})`);
 
   const isDirtyEnv = getEnvVar(`${envPrefix}${envVars.isDirty}`);
-  const commitsSinceTagEnv = getEnvVar(`${envPrefix}${envVars.commitsSinceTag}`);
 
   return {
     commitHash,
@@ -107,7 +127,7 @@ function getGitInfoFromEnv(
     branch: getEnvVar(`${envPrefix}${envVars.branch}`) ?? "unknown",
     isDirty: isDirtyEnv === "true" || isDirtyEnv === "1",
     lastTag: getEnvVar(`${envPrefix}${envVars.lastTag}`) ?? "",
-    commitsSinceTag: commitsSinceTagEnv ? parseInt(commitsSinceTagEnv, 10) : 0,
+    commitsSinceTag: parseCount(getEnvVar(`${envPrefix}${envVars.commitsSinceTag}`)),
   };
 }
 

@@ -125,6 +125,17 @@ describe("getGitInfo", () => {
       expect(info.commitHash).not.toBe("unknown");
     });
 
+    it("should coerce an unparseable commits-since-tag env var to 0", () => {
+      process.env.GIT_COMMIT = "abc123";
+      process.env.GIT_COMMITS_SINCE_TAG = "not-a-number";
+
+      const info = getGitInfo();
+
+      // NaN would satisfy the `number` type but serialize to null via define().
+      expect(info.commitsSinceTag).toBe(0);
+      expect(JSON.parse(JSON.stringify(info)).commitsSinceTag).toBe(0);
+    });
+
     it("should parse isDirty as boolean from various string values", () => {
       // Test "true"
       process.env.GIT_COMMIT = "abc123";
